@@ -11,6 +11,8 @@ class PubspecConfig {
   String? _outputDir;
   bool? _useDeferredLoading;
   LocalizelyConfig? _localizelyConfig;
+  // 名称前缀
+  String? _keyPrefix;
 
   PubspecConfig() {
     var pubspecFile = getPubspecFile();
@@ -37,6 +39,10 @@ class PubspecConfig {
     _className = flutterIntlConfig['class_name'] is String
         ? flutterIntlConfig['class_name']
         : null;
+    _keyPrefix = flutterIntlConfig['key_prefix'] is String
+        ? flutterIntlConfig['key_prefix']
+        : null;
+
     _mainLocale = flutterIntlConfig['main_locale'] is String
         ? flutterIntlConfig['main_locale']
         : null;
@@ -56,6 +62,8 @@ class PubspecConfig {
   bool? get enabled => _enabled;
 
   String? get className => _className;
+
+  String? get keyPrefix => _keyPrefix;
 
   String? get mainLocale => _mainLocale;
 
