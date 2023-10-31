@@ -579,7 +579,7 @@ class MainMessage extends ComplexMessage {
   /// If the message was not given a name, we use the entire message string as
   /// the name.
   @override
-  String get name => getRealName(_name ?? '');
+  String get name => getActualName(_name ?? '');
   set name(String newName) {
     _name = newName;
   }

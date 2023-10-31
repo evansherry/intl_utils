@@ -62,7 +62,7 @@ class IntlTranslationHelper {
       String outputDir, List<String> dartFiles, List<String> arbFiles) {
     var allMessages = dartFiles.map((file) => extraction.parseFile(File(file)));
     for (var messageMap in allMessages) {
-      messageMap.forEach((key, value) => messages.putIfAbsent(getRealName(key), () => []).add(value));
+      messageMap.forEach((key, value) => messages.putIfAbsent(getActualName(key), () => []).add(value));
     }
 
     var messagesByLocale = <String, List<Map>>{};

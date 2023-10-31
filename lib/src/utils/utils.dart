@@ -55,7 +55,7 @@ String formatDartContent(String content, String fileName) {
 
 /// 获取本地化资源key
 const _nameSeparate = '/';
-String getRealName(String name){
+String getActualName(String name){
   var index = name.indexOf(_nameSeparate);
   if(index != -1){
     return name.substring(index + 1);
