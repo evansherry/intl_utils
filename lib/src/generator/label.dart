@@ -211,11 +211,16 @@ class Placeholder {
   bool get requiresFormatting =>
       <String>['DateTime', 'double', 'num', 'int'].contains(type) &&
       format != null;
+
   bool get isNumber => <String>['double', 'int', 'num'].contains(type);
+
   bool get hasValidNumberFormat => _validNumberFormats.contains(format);
+
   bool get hasNumberFormatWithParameters =>
       _numberFormatsWithNamedParameters.contains(format);
+
   bool get isDate => 'DateTime' == type;
+
   bool get hasValidDateFormat => _validDateFormats.contains(format);
 
   static String? _stringAttribute(
@@ -280,9 +285,16 @@ class Label {
   String? type;
   String? description;
   List<Placeholder>? placeholders;
+  String? key;
 
-  Label(this.name, this.content,
-      {this.type, this.description, this.placeholders});
+  Label(
+    this.name,
+    this.content, {
+    this.type,
+    this.description,
+    this.placeholders,
+    this.key,
+  });
 
   /// Generates label getter.
   String generateDartGetter() {
@@ -302,6 +314,7 @@ class Label {
       if (!isValid) {
         throw ValidationException();
       }
+      var keyName = getKeyName(name, key);
 
       switch (contentType) {
         case ContentType.literal:
@@ -311,7 +324,7 @@ class Label {
               '  String get $name {',
               '    return Intl.message(',
               '      \'$content\',',
-              '      name: \'$name\',',
+              '      name: \'$keyName\',',
               '      desc: \'$description\',',
               '      args: [],',
               '    );',
@@ -327,7 +340,7 @@ class Label {
               ..._generateFormattingLogic(args),
               '    return Intl.message(',
               '      \'${_generateCompoundContent(parsedContent, args)}\',',
-              '      name: \'$name\',',
+              '      name: \'$keyName\',',
               '      desc: \'$description\',',
               '      args: [${_generateDartMethodArgs(args)}],',
               '    );',
@@ -345,7 +358,7 @@ class Label {
               '    return Intl.plural(',
               '      $pluralArg,',
               _generatePluralOptions(parsedContent[0] as PluralElement, args),
-              '      name: \'$name\',',
+              '      name: \'$keyName\',',
               '      desc: \'$description\',',
               '      args: [${_generateDartMethodArgs(args)}],',
               '    );',
@@ -363,7 +376,7 @@ class Label {
               '    return Intl.gender(',
               '      $genderArg,',
               _generateGenderOptions(parsedContent[0] as GenderElement, args),
-              '      name: \'$name\',',
+              '      name: \'$keyName\',',
               '      desc: \'$description\',',
               '      args: [${_generateDartMethodArgs(args)}],',
               '    );',
@@ -383,7 +396,7 @@ class Label {
               '    return Intl.select(',
               '      $choiceArg,',
               _generateSelectOptions(parsedContent[0] as SelectElement, args),
-              '      name: \'$name\',',
+              '      name: \'$keyName\',',
               '      desc: \'$description\',',
               '      args: [${_generateDartMethodArgs(args)}],',
               '    );',

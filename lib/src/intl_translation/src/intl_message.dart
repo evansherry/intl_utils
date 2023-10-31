@@ -71,6 +71,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/constant_evaluator.dart';
+import 'package:intl_utils/src/utils/utils.dart';
 
 /// A default function for the [Message.expanded] method.
 dynamic _nullTransform(msg, chunk) => chunk;
@@ -232,7 +233,7 @@ abstract class Message {
     }
 
     var hasOuterName = outerName != null;
-    var simpleMatch = outerName == givenName || givenName == null;
+    var simpleMatch = givenName == null || hasOuterName && givenName.contains(outerName);
 
     var classPlusMethod = Message.classPlusMethodName(node, outerName);
     var classMatch = classPlusMethod != null && (givenName == classPlusMethod);
@@ -578,7 +579,7 @@ class MainMessage extends ComplexMessage {
   /// If the message was not given a name, we use the entire message string as
   /// the name.
   @override
-  String get name => _name ?? '';
+  String get name => getRealName(_name ?? '');
   set name(String newName) {
     _name = newName;
   }

@@ -52,3 +52,17 @@ String formatDartContent(String content, String fileName) {
     return content;
   }
 }
+
+/// 获取本地化资源key
+const _nameSeparate = '/';
+String getRealName(String name){
+  var index = name.indexOf(_nameSeparate);
+  if(index != -1){
+    return name.substring(index + 1);
+  }
+  return name;
+}
+
+String getKeyName(String name, String? key) =>  key == null ? name : '$key/$name';
+
+

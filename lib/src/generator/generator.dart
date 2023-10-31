@@ -11,6 +11,7 @@ import 'templates.dart';
 
 /// The generator of localization files.
 class Generator {
+  String? _key;
   late String _className;
   late String _mainLocale;
   late String _arbDir;
@@ -22,6 +23,7 @@ class Generator {
   Generator() {
     var pubspecConfig = PubspecConfig();
 
+    _key = pubspecConfig.key;
     _className = defaultClassName;
     if (pubspecConfig.className != null) {
       if (isValidClassName(pubspecConfig.className!)) {
@@ -127,6 +129,7 @@ class Generator {
           : null;
 
       return Label(name, content,
+          key: _key,
           type: type, description: description, placeholders: placeholders);
     }).toList();
 
