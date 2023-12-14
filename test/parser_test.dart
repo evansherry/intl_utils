@@ -1,5 +1,5 @@
-import 'package:intl_utils/src/parser/icu_parser.dart';
-import 'package:intl_utils/src/parser/message_format.dart';
+import 'package:intl_utils_plus/src/parser/icu_parser.dart';
+import 'package:intl_utils_plus/src/parser/message_format.dart';
 import 'package:test/test.dart';
 
 void main() {

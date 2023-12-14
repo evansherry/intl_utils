@@ -1,4 +1,4 @@
-import 'package:intl_utils/src/generator/label.dart';
+import 'package:intl_utils_plus/src/generator/label.dart';
 import 'package:test/test.dart';
 
 void main() {

@@ -71,7 +71,7 @@ import 'dart:convert';
 
 import 'package:analyzer/dart/ast/ast.dart';
 import 'package:analyzer/src/dart/ast/constant_evaluator.dart';
-import 'package:intl_utils/src/utils/utils.dart';
+import 'package:intl_utils_plus/src/utils/utils.dart';
 
 /// A default function for the [Message.expanded] method.
 dynamic _nullTransform(msg, chunk) => chunk;
