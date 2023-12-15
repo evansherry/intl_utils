@@ -2,7 +2,7 @@ library intl_utils;
 
 import 'dart:io';
 
-import 'package:intl_utils_plus/intl_utils.dart';
+import 'package:intl_utils_plus/intl_utils_plus.dart';
 import 'package:intl_utils_plus/src/generator/generator_exception.dart';
 import 'package:intl_utils_plus/src/utils/utils.dart';
 
