@@ -46,12 +46,15 @@
 library generate_localized;
 
 import 'package:intl/intl.dart';
+import 'package:intl_utils_plus/src/config/config_exception.dart';
+import 'package:intl_utils_plus/src/utils/file_utils.dart';
 import 'dart:convert';
 import 'dart:io';
 import 'package:path/path.dart' as path;
 
 import './src/intl_message.dart';
 import '../utils/utils.dart';
+import 'package:yaml/yaml.dart' as yaml;
 
 class MessageGeneration {
   /// If the import path following package: is something else, modify the
@@ -189,6 +192,9 @@ class MessageGeneration {
   static Map<String, Function> _notInlinedMessages(_) => <String, Function> {
 ''';
 
+  /// 获取子模块导入
+  String subModuleImports(String locale) => '';
+
   /// [generateIndividualMessageFile] for the beginning of the file,
   /// parameterized by [locale].
   String prologue(String locale) => """
@@ -207,6 +213,8 @@ class MessageGeneration {
 import 'package:$intlImportPath/intl.dart';
 import 'package:$intlImportPath/message_lookup_by_library.dart';
 $extraImports
+${subModuleImports(locale)}
+
 final messages = new MessageLookup();
 
 typedef String MessageIfAbsent(String messageStr, List<dynamic> args);
@@ -455,6 +463,135 @@ String evaluateJsonTemplate(dynamic input, List<dynamic> args) {
  ''';
 }
 
+/// 入口程序message生成
+class AppMessageGeneration extends MessageGeneration {
+  final res = <String, String?>{};
+
+  AppMessageGeneration() {
+    String currentDirectory = getRootDirectoryPath();
+    checkAndReadYamlFiles(currentDirectory);
+  }
+
+  /// 检查扫描项目子模块
+  void checkAndReadYamlFiles(String directoryPath) {
+    // 获取目录中的文件列表
+    var directory = Directory(directoryPath);
+    var files = directory.listSync(recursive: true, followLinks: false);
+
+    // 遍历文件列表
+    for (var file in files) {
+      // 遍历子目录的pubspec.yaml
+      if (file is File &&
+          file.parent.path != directory.path &&
+          file.path.endsWith('pubspec.yaml')) {
+        // 如果是 YAML 文件，则读取其中的 name 属性
+        try {
+          var yamlContent = file.readAsStringSync();
+          var yamlMap = yaml.loadYaml(yamlContent);
+          if (yamlMap is! yaml.YamlMap) {
+            throw ConfigException(
+                "Failed to extract config from the 'pubspec.yaml' file.\nExpected YAML map but got ${yamlMap.runtimeType}.");
+          }
+          final key = yamlMap['name'];
+
+          var intlConfig = yamlMap['flutter_intl'];
+          final value = intlConfig?['key'] as String?;
+          if (key != null) {
+            res[key] = value;
+          }
+          print('扫描到项目: $key, key: $value');
+        } catch (e) {
+          print('Error reading YAML file ${file.path}: $e');
+        }
+      }
+    }
+  }
+
+  /// 生成MessageMap类
+  void generateMessageMapFile(String targetDir) {
+    clearOutput();
+    output.write(messageMap);
+    final fileName = 'message_map.dart';
+
+    final formattedContent = formatDartContent(output.toString(), fileName);
+    final filePath = path.join(targetDir, fileName);
+    File(filePath).writeAsStringSync(formattedContent);
+  }
+
+  @override
+  String get extraImports => '''
+  import 'message_map.dart';
+  ''';
+
+  @override
+  String subModuleImports(String locale) {
+    final sb = StringBuffer();
+    for (var name in res.keys) {
+      sb.write(
+          '''import 'package:$name/generated/intl/messages_$locale.dart' as ${toCamelCase(name)};''');
+    }
+    return sb.toString();
+  }
+
+  @override
+  String get messagesDeclaration {
+    final sb = StringBuffer('''
+  final messages = MessageMap({''');
+    res.entries.toList()
+      ..sort((a, b) {
+        if (a.value == null) {
+          return 1;
+        }
+        if (b.value == null) {
+          return -1;
+        }
+        return 0;
+      })
+      ..forEach((e) {
+        final name = e.key;
+        final key = e.value;
+        if (key == null) {
+          sb.write('''
+        ...${toCamelCase(name)}.messages.messages,
+        ''');
+        } else {
+          sb.write('''
+        '$key': ${toCamelCase(name)}.messages.messages,
+        ''');
+        }
+      });
+    sb.write('''
+    ..._notInlinedMessages(_notInlinedMessages),
+  });
+    static Map<String, Function> _notInlinedMessages(_) => <String, Function> {
+  ''');
+    return sb.toString();
+  }
+
+  /// 定义message类
+  String get messageMap => '''
+import 'package:collection/collection.dart' show DelegatingMap;
+
+class MessageMap extends DelegatingMap<String, dynamic> {
+
+  MessageMap(Map<String, dynamic> source) : super(source);
+
+  @override
+  Function? operator [](Object? key) {
+    if (key is String) {
+      var index = key.indexOf('/');
+      if (index != -1) {
+        var prefix = key.substring(0, index);
+        var name = key.substring(index + 1);
+        return super[prefix]?[name];
+      }
+    }
+    return super[key];
+  }
+}
+  ''';
+}
+
 /// This represents a message and its translation. We assume that the
 /// translation has some identifier that allows us to figure out the original
 /// message it corresponds to, and that it may want to transform the translated
@@ -477,6 +614,7 @@ abstract class TranslatedMessage {
 
   /// For backward compatibility, we still have the originalMessage API.
   MainMessage? get originalMessage => originalMessages?.first;
+
   set originalMessage(MainMessage? m) {
     if (m != null) {
       originalMessages = [m];

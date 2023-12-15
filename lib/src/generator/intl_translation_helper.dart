@@ -48,21 +48,27 @@ class IntlTranslationHelper {
   final JsonCodec jsonDecoder = JsonCodec();
 
   final MessageExtraction extraction = MessageExtraction();
-  final MessageGeneration generation = MessageGeneration();
+  late final MessageGeneration generation;
   final Map<String, List<MainMessage>> messages =
       {}; // Track of all processed messages, keyed by message name
 
-  IntlTranslationHelper([bool useDeferredLoading = false]) {
+  IntlTranslationHelper(bool app, [bool useDeferredLoading = false]) {
     extraction.suppressWarnings = true;
+    generation = app ? AppMessageGeneration() : MessageGeneration();
     generation.useDeferredLoading = useDeferredLoading;
     generation.generatedFilePrefix = '';
   }
 
   void generateFromArb(
       String outputDir, List<String> dartFiles, List<String> arbFiles) {
+    if (generation is AppMessageGeneration) {
+      (generation as AppMessageGeneration).generateMessageMapFile(outputDir);
+    }
+
     var allMessages = dartFiles.map((file) => extraction.parseFile(File(file)));
     for (var messageMap in allMessages) {
-      messageMap.forEach((key, value) => messages.putIfAbsent(getActualName(key), () => []).add(value));
+      messageMap.forEach((key, value) =>
+          messages.putIfAbsent(getActualName(key), () => []).add(value));
     }
 
     var messagesByLocale = <String, List<Map>>{};

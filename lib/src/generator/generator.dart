@@ -72,10 +72,11 @@ class Generator {
   }
 
   /// Generates localization files.
-  Future<void> generateAsync() async {
+  /// [app] 是否app模块
+  Future<void> generateAsync(bool app) async {
     await _updateL10nDir();
     await _updateGeneratedDir();
-    await _generateDartFiles();
+    await _generateDartFiles(app);
   }
 
   Future<void> _updateL10nDir() async {
@@ -147,12 +148,12 @@ class Generator {
         : locales;
   }
 
-  Future<void> _generateDartFiles() async {
+  Future<void> _generateDartFiles(bool app) async {
     var outputDir = getIntlDirectoryPath(_outputDir);
     var dartFiles = [getL10nDartFilePath(_outputDir)];
     var arbFiles = getArbFiles(_arbDir).map((file) => file.path).toList();
 
-    var helper = IntlTranslationHelper(_useDeferredLoading);
+    var helper = IntlTranslationHelper(app, _useDeferredLoading);
     helper.generateFromArb(outputDir, dartFiles, arbFiles);
   }
 }

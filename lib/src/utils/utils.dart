@@ -55,14 +55,23 @@ String formatDartContent(String content, String fileName) {
 
 /// 获取本地化资源key
 const _nameSeparate = '/';
-String getActualName(String name){
+
+String getActualName(String name) {
   var index = name.indexOf(_nameSeparate);
-  if(index != -1){
+  if (index != -1) {
     return name.substring(index + 1);
   }
   return name;
 }
 
-String getKeyName(String name, String? key) =>  key == null ? name : '$key/$name';
+String getKeyName(String name, String? key) =>
+    key == null ? name : '$key$_nameSeparate$name';
 
-
+/// 转驼峰式
+String toCamelCase(String input) {
+  List<String> words = input.split('_');
+  for (int i = 1; i < words.length; i++) {
+    words[i] = words[i][0].toUpperCase() + words[i].substring(1);
+  }
+  return words.join('');
+}
