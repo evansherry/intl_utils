@@ -496,10 +496,15 @@ class AppMessageGeneration extends MessageGeneration {
 
           var intlConfig = yamlMap['flutter_intl'];
           final value = intlConfig?['key'] as String?;
-          if (key != null) {
+          print('扫描到项目: $key, flutter_intl 声明key: $value');
+
+          String curDir = file.parent.path;
+          Directory intlDir = Directory('$curDir/lib/generated/intl');
+
+          if (key != null && intlDir.existsSync()) {
+            print('添加项目: $key, key: $value');
             res[key] = value;
           }
-          print('扫描到项目: $key, key: $value');
         } catch (e) {
           print('Error reading YAML file ${file.path}: $e');
         }
@@ -528,7 +533,7 @@ class AppMessageGeneration extends MessageGeneration {
     final sb = StringBuffer();
     for (var name in res.keys) {
       sb.write(
-          '''import 'package:$name/generated/intl/messages_$locale.dart' as ${toCamelCase(name)};''');
+          '''import 'package:$name/generated/intl/messages_$locale.dart' as $name;''');
     }
     return sb.toString();
   }
@@ -536,35 +541,35 @@ class AppMessageGeneration extends MessageGeneration {
   @override
   String get messagesDeclaration {
     final sb = StringBuffer('''
-  final messages = MessageMap({''');
-    res.entries.toList()
-      ..sort((a, b) {
-        if (a.value == null) {
-          return 1;
-        }
-        if (b.value == null) {
-          return -1;
-        }
-        return 0;
-      })
-      ..forEach((e) {
-        final name = e.key;
-        final key = e.value;
-        if (key == null) {
-          sb.write('''
-        ...${toCamelCase(name)}.messages.messages,
-        ''');
-        } else {
-          sb.write('''
-        '$key': ${toCamelCase(name)}.messages.messages,
-        ''');
-        }
-      });
-    sb.write('''
-    ..._notInlinedMessages(_notInlinedMessages),
-  });
-    static Map<String, Function> _notInlinedMessages(_) => <String, Function> {
+  final messages = MessageMap(
+    <String, Function>{
   ''');
+    res.entries.where((e) => e.value == null).forEach((e) {
+      sb.write('''
+      ...${e.key}.messages.messages,
+        ''');
+    });
+    sb.write('''
+      ..._notInlinedMessages(_notInlinedMessages),
+    },
+    (key, name) {
+      Map<String, dynamic>? messages;
+      switch (key) {
+    ''');
+    res.entries.where((e) => e.value != null).forEach((e) {
+      sb.write('''
+        case '${e.value}':
+           messages = ${e.key}.messages.messages;
+           break;
+      ''');
+    });
+    sb.write('''
+      }
+      return messages?[name];
+    },
+  );
+  static Map<String, Function> _notInlinedMessages(_) => <String, Function> {
+    ''');
     return sb.toString();
   }
 
@@ -573,17 +578,18 @@ class AppMessageGeneration extends MessageGeneration {
 import 'package:collection/collection.dart' show DelegatingMap;
 
 class MessageMap extends DelegatingMap<String, dynamic> {
+  Function? Function(String key, String name)? findMessage;
 
-  MessageMap(Map<String, dynamic> source) : super(source);
+  MessageMap(Map<String, dynamic> source, [this.findMessage]) : super(source);
 
   @override
   Function? operator [](Object? key) {
-    if (key is String) {
+    if (findMessage != null && key is String) {
       var index = key.indexOf('/');
       if (index != -1) {
         var prefix = key.substring(0, index);
         var name = key.substring(index + 1);
-        return super[prefix]?[name];
+        return findMessage?.call(prefix, name);
       }
     }
     return super[key];
