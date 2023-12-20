@@ -478,6 +478,7 @@ class AppMessageGeneration extends MessageGeneration {
     var directory = Directory(directoryPath);
     var files = directory.listSync(recursive: true, followLinks: false);
 
+    final map = <String, String>{};
     // 遍历文件列表
     for (var file in files) {
       // 遍历子目录的pubspec.yaml
@@ -492,18 +493,23 @@ class AppMessageGeneration extends MessageGeneration {
             throw ConfigException(
                 "Failed to extract config from the 'pubspec.yaml' file.\nExpected YAML map but got ${yamlMap.runtimeType}.");
           }
-          final key = yamlMap['name'];
+          final name = yamlMap['name'];
 
           var intlConfig = yamlMap['flutter_intl'];
-          final value = intlConfig?['key'] as String?;
-          print('扫描到项目: $key, flutter_intl 声明key: $value');
+          final intlKey = intlConfig?['key'] as String?;
+          print('扫描到项目: $name, flutter_intl声明key: $intlKey');
 
           String curDir = file.parent.path;
           Directory intlDir = Directory('$curDir/lib/generated/intl');
+          if (map.containsKey(intlKey)) {
+            print('\x1B[31m检查到 $intlKey 在 ${map[intlKey]} 和 $name 中重复定义\x1B[0m');
+          } else if (intlKey != null) {
+            map[intlKey] = name;
+          }
 
-          if (key != null && intlDir.existsSync()) {
-            print('添加项目: $key, key: $value');
-            res[key] = value;
+          if (name != null && intlDir.existsSync()) {
+            print('添加项目: $name, key: $intlKey');
+            res[name] = intlKey;
           }
         } catch (e) {
           print('Error reading YAML file ${file.path}: $e');
